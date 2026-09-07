@@ -7,8 +7,11 @@
 
 ```
 contact-form-sample/
-├── public/            静的フロントエンド (フォーム)
-│   ├── index.html
+├── public/            静的フロントエンド
+│   ├── index.html     お問い合わせフォーム
+│   ├── thanks.html    送信完了後のサンクスページ
+│   ├── list.html      問い合わせ一覧 (簡易・認証なし)
+│   ├── list.js
 │   ├── style.css
 │   └── script.js
 ├── server/            Express API (public/ の静的配信も兼ねる)
@@ -37,11 +40,17 @@ npm start               # http://localhost:3000
 ## API
 
 - `POST /api/contact` — お問い合わせを保存します。
-  - Body: `{ "name": string, "email": string, "message": string }`
+  - Body: `{ "name": string, "email": string, "category": "general"|"product"|"quote"|"other", "message": string }`
   - 成功時: `201` と保存されたレコードを返します。
   - バリデーションエラー時: `400` とフィールドごとのエラーを返します。
-- `GET /api/contact` — 保存済みのお問い合わせを新しい順に最大50件返します（動作確認用）。
+- `GET /api/contact` — 保存済みのお問い合わせを新しい順に最大50件返します。`public/list.html` が利用します。
 - `GET /api/health` — ヘルスチェック。
+
+## 画面
+
+- `/` (`index.html`) — お問い合わせフォーム。送信成功時は `thanks.html` に遷移します。
+- `/thanks.html` — 送信完了メッセージを表示するサンクスページ。
+- `/list.html` — 保存済み問い合わせの簡易一覧画面。**認証はありません**。社内・開発用途を想定しており、個人情報を含むため公開URLとして外部に共有しないでください。将来的にスパム対策(reCAPTCHA等)や一覧画面への認証追加を検討しています（`TODO.md` 参照）。
 
 ## Azureへのデプロイ（想定構成）
 

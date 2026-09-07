@@ -25,6 +25,18 @@
       </div>
 
       <div class="field">
+        <label for="category">お問い合わせ種別 <span class="required">必須</span></label>
+        <select id="category" name="category" required>
+          <option value="" selected disabled>選択してください</option>
+          <option value="general">一般的なお問い合わせ</option>
+          <option value="product">製品・サービスについて</option>
+          <option value="quote">お見積もり・体験のご相談</option>
+          <option value="other">その他</option>
+        </select>
+        <p class="error" data-error-for="category"></p>
+      </div>
+
+      <div class="field">
         <label for="message">お問い合わせ内容 <span class="required">必須</span></label>
         <textarea id="message" name="message" rows="6" required maxlength="2000"></textarea>
         <p class="error" data-error-for="message"></p>

@@ -69,6 +69,7 @@ label {
 }
 
 input,
+select,
 textarea {
   width: 100%;
   padding: 10px 12px;
@@ -81,6 +82,7 @@ textarea {
 }
 
 input:focus,
+select:focus,
 textarea:focus {
   outline: none;
   border-color: var(--accent);
@@ -120,22 +122,107 @@ button:disabled {
   cursor: not-allowed;
 }
 
-#form-status {
+#form-status,
+#list-status {
   margin-top: 16px;
   padding: 12px 14px;
   border-radius: 8px;
   font-size: 0.9rem;
+}
+
+#form-status:empty,
+#list-status:empty {
   display: none;
 }
 
 #form-status.success {
-  display: block;
   background: var(--success-bg);
   color: var(--success-text);
 }
 
-#form-status.error {
-  display: block;
+#form-status.error,
+#list-status.error {
   background: var(--error-bg);
   color: var(--error-text);
+}
+
+/* サンクスページ */
+.thanks-card {
+  text-align: center;
+}
+
+.thanks-icon {
+  width: 56px;
+  height: 56px;
+  margin: 0 auto 16px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  border-radius: 50%;
+  background: var(--success-bg);
+  color: var(--success-text);
+  font-size: 1.75rem;
+  font-weight: 700;
+}
+
+.button-link {
+  display: inline-block;
+  margin-top: 20px;
+  padding: 10px 20px;
+  border-radius: 8px;
+  background: var(--accent);
+  color: #fff;
+  text-decoration: none;
+  font-weight: 600;
+  font-size: 0.95rem;
+}
+
+.button-link:hover {
+  background: var(--accent-hover);
+}
+
+/* 一覧ページ */
+.list-page {
+  max-width: 960px;
+  width: 100%;
+}
+
+.list-page table {
+  width: 100%;
+  border-collapse: collapse;
+  margin-top: 16px;
+  font-size: 0.88rem;
+}
+
+.list-page caption {
+  caption-side: top;
+  text-align: left;
+  margin-bottom: 4px;
+}
+
+.list-page th,
+.list-page td {
+  border: 1px solid var(--border);
+  padding: 8px 10px;
+  text-align: left;
+  vertical-align: top;
+}
+
+.list-page th {
+  background: #f9fafb;
+  white-space: nowrap;
+}
+
+.list-page td.message-cell {
+  white-space: pre-wrap;
+  max-width: 320px;
+}
+
+.list-page .empty {
+  color: var(--muted);
+  margin-top: 16px;
+}
+
+.list-page .table-wrap {
+  overflow-x: auto;
 }

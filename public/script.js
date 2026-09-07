@@ -9,6 +9,7 @@ const rules = {
     const ok = /^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(v.trim());
     return ok ? "" : "メールアドレスの形式が正しくありません。";
   },
+  category: (v) => (v.trim().length > 0 ? "" : "お問い合わせ種別を選択してください。"),
   message: (v) => (v.trim().length > 0 ? "" : "お問い合わせ内容を入力してください。"),
 };
 
@@ -40,6 +41,7 @@ form.addEventListener("submit", async (event) => {
   const data = {
     name: formData.get("name")?.toString() ?? "",
     email: formData.get("email")?.toString() ?? "",
+    category: formData.get("category")?.toString() ?? "",
     message: formData.get("message")?.toString() ?? "",
   };
 
@@ -63,8 +65,9 @@ form.addEventListener("submit", async (event) => {
       throw new Error(body.error || "送信に失敗しました。");
     }
 
-    setStatus("success", "お問い合わせを受け付けました。ありがとうございます。");
-    form.reset();
+    // 送信成功時はサンクスページへ遷移する
+    window.location.href = "thanks.html";
+    return;
   } catch (err) {
     setStatus("error", err.message || "送信中にエラーが発生しました。時間をおいて再度お試しください。");
   } finally {
