@@ -1,144 +1,54 @@
 # contact-form-sample
 
-静的な HTML/CSS/JS のお問い合わせフォームと、Node.js (Express) の API、PostgreSQL によるデータ保存を組み合わせたサンプルアプリケーションです。
-デプロイ先は **Azure完結**（Azure Container Apps + Azure Database for PostgreSQL）を想定しています。フロントエンドもExpressの静的配信で同じアプリから提供するため、GitHub Pagesのような別ホスティングとの分離やCORS設定は不要です。
+> このREADMEは、このプロジェクトに初めて触れる方向けの入口です。機能・API・インフラの詳細な仕様は [`docs/仕様書.md`](docs/仕様書.md) にまとめています。
 
-## 🌐 デプロイ済みURL
+お問い合わせフォームのサンプルアプリケーションです。フォームに入力された内容をデータベースに保存し、一覧で確認できます。Azureのサービスのみで動作するように構築されています。
 
-- フォーム: **https://contact-form-sample.proudwave-93429adb.japaneast.azurecontainerapps.io/**
-- 問い合わせ一覧: **https://contact-form-sample.proudwave-93429adb.japaneast.azurecontainerapps.io/list.html**
-  （認証なし・社内確認用。個人情報を含むためこのURLを外部に共有しないこと）
+## 🌐 実際に触ってみる
 
-## 構成
+- お問い合わせフォーム: **https://contact-form-sample.proudwave-93429adb.japaneast.azurecontainerapps.io/**
+- 問い合わせ一覧（社内確認用）: **https://contact-form-sample.proudwave-93429adb.japaneast.azurecontainerapps.io/list.html**
 
-```
-contact-form-sample/
-├── public/            静的フロントエンド
-│   ├── index.html     お問い合わせフォーム
-│   ├── thanks.html    送信完了後のサンクスページ
-│   ├── list.html      問い合わせ一覧 (簡易・認証なし)
-│   ├── list.js
-│   ├── style.css
-│   └── script.js
-├── server/            Express API (public/ の静的配信も兼ねる)
-│   ├── index.js
-│   ├── db/
-│   │   ├── pool.js    PostgreSQL 接続プール (Azure向けにSSL有効がデフォルト)
-│   │   ├── init.sql   テーブル定義
-│   │   └── migrate.js init.sql を適用するスクリプト
-│   └── routes/
-│       └── contact.js POST/GET /api/contact
-├── tests/              自動テスト (node:test)
-│   └── contact.validate.test.js
-├── Dockerfile          Azure Container Apps向けのコンテナイメージ定義
-├── .dockerignore
-└── .env.example
-```
+> ⚠️ 一覧画面には認証がなく、送信された個人情報がそのまま表示されます。このURLを外部に共有しないでください。
 
-## ローカルでの動作確認
+## 使われている技術
 
-Azure Database for PostgreSQL Flexible Server（開発用インスタンス）に対して接続する想定です。
+- フロントエンド: HTML / CSS / JavaScript（フレームワークなし）
+- バックエンド: Node.js (Express)
+- データベース: PostgreSQL（Azure Database for PostgreSQL）
+- ホスティング: Azure Container Apps
+
+## ローカルで動かす
 
 ```bash
 npm install
-cp .env.example .env   # DATABASE_URL を実際のAzure Postgresの接続情報に書き換える
-
+cp .env.example .env   # DATABASE_URL を接続先のPostgresの情報に書き換える
 npm run db:migrate     # テーブルを作成
 npm start               # http://localhost:3000
 ```
 
-## テスト
-
 ```bash
-npm test    # node:test でバリデーション・ボット対策ロジックの単体テストを実行
+npm test    # 単体テストを実行
 ```
 
-現状はバリデーションロジック(`validate()`)の単体テストのみで、DBに依存する結合テスト（POST/GET /api/contactの実挙動）は未整備です。
+環境構築の前提条件や各コマンドの詳細は [`docs/仕様書.md`](docs/仕様書.md) を参照してください。
 
-## API
+## 現在の状態
 
-- `POST /api/contact` — お問い合わせを保存します。
-  - Body: `{ "name": string, "email": string, "category": "general"|"product"|"quote"|"other", "message": string, "hp_website"?: string }`
-  - 成功時: `201` と保存されたレコードを返します。
-  - バリデーションエラー時: `400` とフィールドごとのエラーを返します。
-  - 送信回数の上限 (同一IPから10分あたり5回) を超えた場合: `429`。
-  - `hp_website` (honeypot) に値が入っている場合はbotとみなし、DBには保存せず `201` の偽装成功を返します。
-- `GET /api/contact` — 保存済みのお問い合わせを新しい順に最大50件返します。`public/list.html` が利用します。
-- `GET /api/health` — ヘルスチェック。
+フォームからの送信・データベースへの保存・一覧表示までは、Azure上の実環境で動作確認済みです。一方で、次の点は今後の対応事項として残っています。
 
-## 画面
-
-- `/` (`index.html`) — お問い合わせフォーム。送信成功時は `thanks.html` に遷移します。
-- `/thanks.html` — 送信完了メッセージを表示するサンクスページ。
-- `/list.html` — 保存済み問い合わせの簡易一覧画面。**認証はありません**。社内・開発用途を想定しており、個人情報を含むため公開URLとして外部に共有しないでください。一覧画面への認証追加は将来検討事項です（`TODO.md` 参照）。
-
-## ボット対策
-
-- **honeypotフィールド** (`hp_website`): 画面上には表示されない隠しフィールド。botが自動入力すると検知し、DBには保存せず成功したように見せて静かに処理を打ち切ります (`server/routes/contact.js`)。
-- **レート制限**: `POST /api/contact` に対して同一IPから10分あたり5回までに制限 (`express-rate-limit`)。超過時は `429` を返します。
-- Azure Container Apps はリバースプロキシ配下で動作するため、`server/index.js` で `app.set("trust proxy", true)` を設定し、実クライアントIPをレート制限に反映しています。
-- より強力なボット対策（Google reCAPTCHA等）は将来の拡張として検討可能です。
-
-## Azureへのデプロイ（採用構成）
-
-| リソース | 役割 |
+| 内容 | 状況 |
 |---|---|
-| **Azure Container Apps** | `Dockerfile` からビルドしたコンテナイメージを実行。`public/` の静的配信とAPIの両方を提供 |
-| **Azure Container Registry (ACR)** | コンテナイメージの保管先。Container Appsはマネージド ID (システム割り当て) で認証してPull |
-| **Azure Database for PostgreSQL Flexible Server** | データ保存先 |
+| デプロイの自動化 (CI/CD) | 未対応。現状は手動でデプロイしている（[Issue #1](https://github.com/yNagata6158/contact-form-sample/issues/1)） |
+| データベースを使った自動テスト | 未対応。入力チェックの単体テストのみ整備済み（[Issue #2](https://github.com/yNagata6158/contact-form-sample/issues/2)） |
+| 障害・エラー発生時の通知 | 未対応。ログは記録されているが、能動的なアラート通知は未設定（[Issue #4](https://github.com/yNagata6158/contact-form-sample/issues/4)） |
 
-Container Appsはコンテナのポート `3000`（`Dockerfile` の `EXPOSE`/`ENV PORT` に合わせて設定）にingressを向けています。`DATABASE_URL` はContainer Appの secret として保存し、環境変数から参照しています。
+スパム対策（フォームの不正送信対策）は対応済みです。
 
-### なぜApp ServiceではなくContainer Appsなのか
+## ドキュメント
 
-当初はAzure App Service（Node.jsランタイム、ソースコード直接デプロイ）を採用する予定でした。しかし実際にリソース作成を試みたところ、対象サブスクリプション（新規のPay-As-You-Go）で**App Service Planに必要なコンピューティング(VM)クォータが0**に制限されており、リージョンを変えても（Japan East / East US）、別サブスクリプションに切り替えても作成できませんでした。
-
-Azureポータルからのクォータ増設申請（Help + support 経由のサポートリクエスト）で解消は可能ですが、手続きが煩雑なため、**同じ「Azure完結」構成を保ったまま、別のクォータ枠を使うAzure Container Apps（Consumption/サーバーレスプラン）に切り替えました**。Container Appsはこのクォータ制限の影響を受けず、ポータル操作なしでCLIから即座に作成できました。
-
-この変更に伴うコード側の変更は最小限で、`Dockerfile` を1つ追加しただけです（`server/`・`public/` のコードは無変更）。
-
-### デプロイ手順
-
-```bash
-# 1. Azure Container Registry でイメージをビルド・プッシュ (ローカルDocker不要)
-az acr build --registry <ACR名> --resource-group <リソースグループ> --image contact-form-sample:latest .
-
-# 2. Container Appを作成 (初回のみ)
-az containerapp create \
-  --name contact-form-sample \
-  --resource-group <リソースグループ> \
-  --environment <Container Apps環境名> \
-  --image <ACR名>.azurecr.io/contact-form-sample:latest \
-  --registry-server <ACR名>.azurecr.io \
-  --registry-identity system \
-  --target-port 3000 \
-  --ingress external \
-  --min-replicas 0 --max-replicas 1 \
-  --secrets "database-url=<Postgres接続文字列>" \
-  --env-vars "DATABASE_URL=secretref:database-url"
-
-# 2'. 更新時はイメージを再ビルド後、以下でリビジョンを更新
-# 注意: イメージタグが :latest のまま (文字列が変わらない) だと、Container Appsが
-# 「参照に変更なし」と判断して新しいリビジョンを作らないことがある。
-# その場合は --revision-suffix で明示的に新しいリビジョンを作成する。
-az containerapp update \
-  --name contact-form-sample \
-  --resource-group <リソースグループ> \
-  --image <ACR名>.azurecr.io/contact-form-sample:latest \
-  --revision-suffix <任意の一意な文字列 (例: 日時やビルド番号)>
-```
-
-コミットハッシュ等でイメージタグを一意にする運用にすれば、この注意は不要になる（Phase 4のCI/CD化で対応予定）。
-
-CI/CD（GitHub Actionsなど）を組む場合は、上記のビルド・プッシュ・更新を自動化するワークフローの追加が必要です。
-**現状はセットアップ途中で保留中です** — 詳細と残作業は `TODO.md` Phase 4、および起票予定のGitHub Issueを参照してください。
-
-### バックアップ・監視
-
-- **バックアップ**: Azure Database for PostgreSQL Flexible Serverの既定設定を採用（自動バックアップ保持7日間、ポイントインタイムリストア可能）。geo冗長バックアップは無効（ローカル冗長のみ）。最小構成・低コストを優先したトレードオフ。
-- **ログ/監視**: Container Apps環境作成時に自動生成されたLog Analyticsワークスペースにアプリログが送信されます。確認方法:
-  ```bash
-  az containerapp logs show --name contact-form-sample --resource-group <リソースグループ> --tail 50
-  ```
-  もしくはAzure Portalの対象Container Appの「ログストリーム」「ログ」から確認できます。
-- **アラート通知**（エラー率上昇時のメール通知など）は今回は未設定です。必要になれば別途検討してください。
+| ドキュメント | 内容 | 主な読み手 |
+|---|---|---|
+| README.md（このファイル） | プロジェクトの概要・触り方・現状 | はじめてこのプロジェクトを見る方 |
+| [docs/仕様書.md](docs/仕様書.md) | 機能・API・データベース・インフラの設計仕様 | 開発者・運用者 |
+| [TODO.md](TODO.md) | 開発の進め方・意思決定の記録 | 開発を引き継ぐ方 |

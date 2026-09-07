@@ -3,7 +3,7 @@
 `contact-form-sample` 開発のタスクリスト。Azure完結構成（Azure Container Apps + Azure Database for PostgreSQL）を前提とする。
 チェック済みは完了済みタスク。以後の作業依頼はこのリストの項目単位で行う。
 
-※ 当初はApp Serviceを想定していたが、Phase 1でクォータ制限に阻まれ Container Apps に変更した。詳細は下記Phase 1および `README.md` を参照。
+※ 当初はApp Serviceを想定していたが、Phase 1でクォータ制限に阻まれ Container Apps に変更した。詳細は下記Phase 1および `docs/仕様書.md` を参照。
 
 ## Phase 0: プロジェクト基盤 (完了)
 
@@ -58,7 +58,7 @@ Linux App Service Plan (B1/F1共に) 作成時に `Operation cannot be completed
 
 Azureポータル操作なしで進められる代替として **Azure Container Apps (Consumption/サーバーレスプラン)** に変更。
 このクォータ制限を受けず、CLIから即座に作成できた。コード側の変更は `Dockerfile` の追加のみ。
-経緯の詳細は `README.md` の「なぜApp ServiceではなくContainer Appsなのか」を参照。
+経緯の詳細は `docs/仕様書.md` の「6.1 ホスティングにAzure Container Appsを採用した経緯」を参照。
 
 ### 作成済みリソース (参照用)
 
@@ -96,7 +96,7 @@ Container Appsは作成時にイメージを指定する方式のため、Phase 
 - [x] HTTPS確認 — `*.azurecontainerapps.io` は既定でHTTPS (追加設定不要)
 - [ ] カスタムドメイン確認 — 今回は未要望のため未実施 (必要になれば別途)
 
-以後のイメージ更新は `az acr build` → `az containerapp update --image ...` で行う (`README.md` 参照)。
+以後のイメージ更新は `az acr build` → `az containerapp update --image ...` で行う (`docs/仕様書.md` 「7. デプロイ手順」参照)。
 
 ## Phase 4: CI/CD (**保留 — Issue #1**)
 
