@@ -122,8 +122,10 @@ appId: `cc7543de-9eab-408a-b424-660c844901f9`) までは作成できたが、続
 
 ## Phase 5: 品質・セキュリティ強化
 
-- [ ] レート制限・スパム対策 (reCAPTCHA等) — Phase 0.5で決定済みの通り**今回は引き続き保留**。
-      → **[Issue #3](https://github.com/yNagata6158/contact-form-sample/issues/3)** として起票済み。
+- [x] レート制限・スパム対策 — **[Issue #3](https://github.com/yNagata6158/contact-form-sample/issues/3)** で対応。
+      honeypotフィールド (`hp_website`) + レート制限 (同一IP・10分あたり5回、`express-rate-limit`) を実装。
+      `issue-3-spam-protection`ブランチでPR作成 (Google reCAPTCHA等の外部サービス連携は見送り、
+      必要になれば別Issueで再検討)。
 - [x] `qs`/Expressの脆弱性再確認 — 再度`npm audit`実施、状況変わらずupstream未パッチ (moderate、JSON APIのみ使用のため実害は限定的と判断し様子見)
 - [x] エラーハンドリング/ロギングの改善
       - リクエストログミドルウェア追加 (method/path/status/所要時間)

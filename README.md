@@ -50,7 +50,7 @@ npm start               # http://localhost:3000
 ## テスト
 
 ```bash
-npm test    # node:test でバリデーションロジックの単体テストを実行 (追加依存なし)
+npm test    # node:test でバリデーション・ボット対策ロジックの単体テストを実行
 ```
 
 現状はバリデーションロジック(`validate()`)の単体テストのみで、DBに依存する結合テスト（POST/GET /api/contactの実挙動）は未整備です。
@@ -58,9 +58,11 @@ npm test    # node:test でバリデーションロジックの単体テスト�
 ## API
 
 - `POST /api/contact` — お問い合わせを保存します。
-  - Body: `{ "name": string, "email": string, "category": "general"|"product"|"quote"|"other", "message": string }`
+  - Body: `{ "name": string, "email": string, "category": "general"|"product"|"quote"|"other", "message": string, "hp_website"?: string }`
   - 成功時: `201` と保存されたレコードを返します。
   - バリデーションエラー時: `400` とフィールドごとのエラーを返します。
+  - 送信回数の上限 (同一IPから10分あたり5回) を超えた場合: `429`。
+  - `hp_website` (honeypot) に値が入っている場合はbotとみなし、DBには保存せず `201` の偽装成功を返します。
 - `GET /api/contact` — 保存済みのお問い合わせを新しい順に最大50件返します。`public/list.html` が利用します。
 - `GET /api/health` — ヘルスチェック。
 
@@ -68,7 +70,14 @@ npm test    # node:test でバリデーションロジックの単体テスト�
 
 - `/` (`index.html`) — お問い合わせフォーム。送信成功時は `thanks.html` に遷移します。
 - `/thanks.html` — 送信完了メッセージを表示するサンクスページ。
-- `/list.html` — 保存済み問い合わせの簡易一覧画面。**認証はありません**。社内・開発用途を想定しており、個人情報を含むため公開URLとして外部に共有しないでください。将来的にスパム対策(reCAPTCHA等)や一覧画面への認証追加を検討しています（`TODO.md` 参照）。
+- `/list.html` — 保存済み問い合わせの簡易一覧画面。**認証はありません**。社内・開発用途を想定しており、個人情報を含むため公開URLとして外部に共有しないでください。一覧画面への認証追加は将来検討事項です（`TODO.md` 参照）。
+
+## ボット対策
+
+- **honeypotフィールド** (`hp_website`): 画面上には表示されない隠しフィールド。botが自動入力すると検知し、DBには保存せず成功したように見せて静かに処理を打ち切ります (`server/routes/contact.js`)。
+- **レート制限**: `POST /api/contact` に対して同一IPから10分あたり5回までに制限 (`express-rate-limit`)。超過時は `429` を返します。
+- Azure Container Apps はリバースプロキシ配下で動作するため、`server/index.js` で `app.set("trust proxy", true)` を設定し、実クライアントIPをレート制限に反映しています。
+- より強力なボット対策（Google reCAPTCHA等）は将来の拡張として検討可能です。
 
 ## Azureへのデプロイ（採用構成）
 

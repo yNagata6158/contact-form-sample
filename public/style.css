@@ -55,6 +55,17 @@ h1 {
   margin-bottom: 18px;
 }
 
+/* ボット対策のhoneypotフィールド: 画面には表示せず、支援技術からも隠す。
+   display:none だと一部のbotが検出してスキップするため、代わりに画面外に配置する。 */
+.hp-field {
+  position: absolute;
+  left: -9999px;
+  top: -9999px;
+  width: 1px;
+  height: 1px;
+  overflow: hidden;
+}
+
 label {
   display: block;
   margin-bottom: 6px;
