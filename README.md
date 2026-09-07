@@ -22,6 +22,8 @@ contact-form-sample/
 │   │   └── migrate.js init.sql を適用するスクリプト
 │   └── routes/
 │       └── contact.js POST/GET /api/contact
+├── tests/              自動テスト (node:test)
+│   └── contact.validate.test.js
 ├── Dockerfile          Azure Container Apps向けのコンテナイメージ定義
 ├── .dockerignore
 └── .env.example
@@ -38,6 +40,14 @@ cp .env.example .env   # DATABASE_URL を実際のAzure Postgresの接続情報�
 npm run db:migrate     # テーブルを作成
 npm start               # http://localhost:3000
 ```
+
+## テスト
+
+```bash
+npm test    # node:test でバリデーションロジックの単体テストを実行 (追加依存なし)
+```
+
+現状はバリデーションロジック(`validate()`)の単体テストのみで、DBに依存する結合テスト（POST/GET /api/contactの実挙動）は未整備です。
 
 ## API
 
@@ -93,10 +103,27 @@ az containerapp create \
   --env-vars "DATABASE_URL=secretref:database-url"
 
 # 2'. 更新時はイメージを再ビルド後、以下でリビジョンを更新
+# 注意: イメージタグが :latest のまま (文字列が変わらない) だと、Container Appsが
+# 「参照に変更なし」と判断して新しいリビジョンを作らないことがある。
+# その場合は --revision-suffix で明示的に新しいリビジョンを作成する。
 az containerapp update \
   --name contact-form-sample \
   --resource-group <リソースグループ> \
-  --image <ACR名>.azurecr.io/contact-form-sample:latest
+  --image <ACR名>.azurecr.io/contact-form-sample:latest \
+  --revision-suffix <任意の一意な文字列 (例: 日時やビルド番号)>
 ```
 
-CI/CD（GitHub Actionsなど）を組む場合は、上記のビルド・プッシュ・更新を自動化するワークフローの追加が必要です（`TODO.md` Phase 4）。
+コミットハッシュ等でイメージタグを一意にする運用にすれば、この注意は不要になる（Phase 4のCI/CD化で対応予定）。
+
+CI/CD（GitHub Actionsなど）を組む場合は、上記のビルド・プッシュ・更新を自動化するワークフローの追加が必要です。
+**現状はセットアップ途中で保留中です** — 詳細と残作業は `TODO.md` Phase 4、および起票予定のGitHub Issueを参照してください。
+
+### バックアップ・監視
+
+- **バックアップ**: Azure Database for PostgreSQL Flexible Serverの既定設定を採用（自動バックアップ保持7日間、ポイントインタイムリストア可能）。geo冗長バックアップは無効（ローカル冗長のみ）。最小構成・低コストを優先したトレードオフ。
+- **ログ/監視**: Container Apps環境作成時に自動生成されたLog Analyticsワークスペースにアプリログが送信されます。確認方法:
+  ```bash
+  az containerapp logs show --name contact-form-sample --resource-group <リソースグループ> --tail 50
+  ```
+  もしくはAzure Portalの対象Container Appの「ログストリーム」「ログ」から確認できます。
+- **アラート通知**（エラー率上昇時のメール通知など）は今回は未設定です。必要になれば別途検討してください。

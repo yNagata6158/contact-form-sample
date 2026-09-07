@@ -75,3 +75,5 @@ router.get("/", async (_req, res, next) => {
 });
 
 module.exports = router;
+module.exports.validate = validate;
+module.exports.CATEGORIES = CATEGORIES;
