@@ -40,12 +40,31 @@
 
 DDL適用・INSERT/SELECTの実データ確認は Phase 2 で行う。
 
-## Phase 1: Azureリソース準備
+## Phase 1: Azureリソース準備 (一部ブロック中)
 
-- [ ] Azure Database for PostgreSQL Flexible Server を作成
-- [ ] ファイアウォール/ネットワーク設定 (開発機のIP許可など)
-- [ ] Azure App Service を作成 (Node.js ランタイム)
+- [x] Azure Database for PostgreSQL Flexible Server を作成
+- [x] ファイアウォール/ネットワーク設定 (Azureサービス許可 + 開発機のIP許可)
+- [ ] Azure App Service を作成 (Node.js ランタイム) — **クォータ制限でブロック中** (下記参照)
 - [ ] App Service の環境変数設定 (`DATABASE_URL` 等)
+
+### ブロッカー: App Serviceのコンピューティングクォータ不足
+
+サブスクリプション `Pay-As-You-Go` で、japaneast・eastus双方において Linux App Service Plan (B1/F1共に) 作成時に
+`Operation cannot be completed without additional quota` エラー。サブスクリプション全体でVMクォータが0の状態。
+
+対応: Azureポータルの「Quotas」ブレードからApp Service (japaneast, Linux) のクォータ増設を申請中。
+承認後、`plan-contact-form-sample` (Linux, B1) と Web App の作成を再開する。
+
+### 作成済みリソース (参照用)
+
+| リソース | 名前 | 備考 |
+|---|---|---|
+| リソースグループ | `rg-contact-form-sample` | japaneast |
+| サブスクリプション | `Pay-As-You-Go` (`0d378385-895f-4f37-a9da-e7aaf101d980`) | |
+| PostgreSQL Flexible Server | `contact-form-sample-ngkft` | `contact-form-sample-ngkft.postgres.database.azure.com` |
+| DB名 | `contact_form_sample` | |
+| DB管理者ユーザー | `pgadmin` | パスワードは `.azure-pg-admin-password.txt` (gitignore対象・リポジトリには含まれない) |
+| ファイアウォール | `AllowAllAzureServicesAndResourcesWithinAzureIps_*`, `AllowDevMachine` (開発機IP) | |
 
 ## Phase 2: DB接続・マイグレーション確認
 
