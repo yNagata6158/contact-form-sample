@@ -24,11 +24,21 @@
 - [x] 問い合わせ一覧: **簡易な一覧画面**が必要 (認証なし/簡易、小規模内部向けの想定)
 - [x] スパム対策 (reCAPTCHA等): 今回は**保留**。Phase 5に将来対応として残す
 
-## Phase 0.6: 機能要件の実装 (完了)
+## Phase 0.6: 機能要件の実装 (完了・コードのみ)
 
-- [x] フォームに「問い合わせ種別」プルダウンを追加 (フロント/API/DBスキーマ)
+- [x] フォームに「問い合わせ種別」プルダウンを追加 (`public/index.html`, `public/script.js`)
+- [x] APIのバリデーション/保存処理にcategoryを追加 (`server/routes/contact.js`)
+- [x] DBスキーマ設計・DDL作成: `contacts`テーブルに`category`カラムを追加 (`server/db/init.sql`)
+      ※ **実際のPostgreSQLに対しては未実行・未検証**。DDLの妥当性はコードレビューレベルの確認のみ。
 - [x] 送信後のサンクスページを実装 (`thanks.html` への画面遷移)
 - [x] 簡易な一覧画面を実装 (`list.html` / `GET /api/contact`)
+
+現時点で確認できているのは以下のみ:
+- 各画面 (index/thanks/list.html) が静的配信されること
+- サーバー側バリデーション (category未選択・不正値で400になること)
+- DB未接続時に `GET /api/contact` がクラッシュせず500を返すこと
+
+DDL適用・INSERT/SELECTの実データ確認は Phase 2 で行う。
 
 ## Phase 1: Azureリソース準備
 
@@ -40,8 +50,11 @@
 ## Phase 2: DB接続・マイグレーション確認
 
 - [ ] ローカルからAzure Postgresへの接続確認
-- [ ] `npm run db:migrate` 実行してテーブル作成を確認
-- [ ] フォーム送信のE2E動作確認 (ローカル → Azure DB)
+- [ ] `npm run db:migrate` 実行し、`contacts`テーブルと`category`カラムが設計通り作成されることを確認
+- [ ] `POST /api/contact` で実際にINSERTされ、`category`を含めて正しく保存されることを確認
+- [ ] `GET /api/contact` で保存データが正しく取得できることを確認 (`categories`ラベルの対応含む)
+- [ ] `list.html` が実データを正しく一覧表示できることを確認
+- [ ] フォーム送信のE2E動作確認 (ローカル → Azure DB → サンクスページ遷移)
 
 ## Phase 3: Azureへのデプロイ
 
