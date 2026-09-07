@@ -3,6 +3,12 @@
 静的な HTML/CSS/JS のお問い合わせフォームと、Node.js (Express) の API、PostgreSQL によるデータ保存を組み合わせたサンプルアプリケーションです。
 デプロイ先は **Azure完結**（Azure Container Apps + Azure Database for PostgreSQL）を想定しています。フロントエンドもExpressの静的配信で同じアプリから提供するため、GitHub Pagesのような別ホスティングとの分離やCORS設定は不要です。
 
+## 🌐 デプロイ済みURL
+
+**https://contact-form-sample.proudwave-93429adb.japaneast.azurecontainerapps.io/**
+
+- `/list.html` — 問い合わせ一覧（認証なし・社内確認用。個人情報を含むためURLを外部に共有しないこと）
+
 ## 構成
 
 ```
