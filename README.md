@@ -5,9 +5,9 @@
 
 ## 🌐 デプロイ済みURL
 
-**https://contact-form-sample.proudwave-93429adb.japaneast.azurecontainerapps.io/**
-
-- `/list.html` — 問い合わせ一覧（認証なし・社内確認用。個人情報を含むためURLを外部に共有しないこと）
+- フォーム: **https://contact-form-sample.proudwave-93429adb.japaneast.azurecontainerapps.io/**
+- 問い合わせ一覧: **https://contact-form-sample.proudwave-93429adb.japaneast.azurecontainerapps.io/list.html**
+  （認証なし・社内確認用。個人情報を含むためこのURLを外部に共有しないこと）
 
 ## 構成
 
