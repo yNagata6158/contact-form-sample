@@ -66,7 +66,7 @@ Azureポータル操作なしで進められる代替として **Azure Container
 |---|---|---|
 | リソースグループ | `rg-contact-form-sample` | japaneast |
 | サブスクリプション | `Pay-As-You-Go` (`0d378385-895f-4f37-a9da-e7aaf101d980`) | |
-| PostgreSQL Flexible Server | `contact-form-sample-ngkft` | `contact-form-sample-ngkft.postgres.database.azure.com` |
+| PostgreSQL Flexible Server | `contact-form-sample-ngkft` | `contact-form-sample-ngkft.postgres.database.azure.com`。**2026-09-07 コスト抑制のため停止 (`state: Stopped`)**。再開: `az postgres flexible-server start --name contact-form-sample-ngkft --resource-group rg-contact-form-sample`。7日間放置するとAzureが自動再起動する点に注意。停止中はフォームのDB連携部分 (送信/一覧) が動作しない |
 | DB名 | `contact_form_sample` | |
 | DB管理者ユーザー | `pgadmin` | パスワードは `.azure-pg-admin-password.txt` (gitignore対象・リポジトリには含まれない) |
 | ファイアウォール | `AllowAllAzureServicesAndResourcesWithinAzureIps_*`, `AllowDevMachine` (開発機IP) | |
