@@ -1,7 +1,7 @@
 # contact-form-sample
 
 静的な HTML/CSS/JS のお問い合わせフォームと、Node.js (Express) の API、PostgreSQL によるデータ保存を組み合わせたサンプルアプリケーションです。
-デプロイ先は **Azure完結**（App Service + Azure Database for PostgreSQL）を想定しています。フロントエンドもExpressの静的配信で同じアプリから提供するため、GitHub Pagesのような別ホスティングとの分離やCORS設定は不要です。
+デプロイ先は **Azure完結**（Azure Container Apps + Azure Database for PostgreSQL）を想定しています。フロントエンドもExpressの静的配信で同じアプリから提供するため、GitHub Pagesのような別ホスティングとの分離やCORS設定は不要です。
 
 ## 構成
 
@@ -22,6 +22,8 @@ contact-form-sample/
 │   │   └── migrate.js init.sql を適用するスクリプト
 │   └── routes/
 │       └── contact.js POST/GET /api/contact
+├── Dockerfile          Azure Container Apps向けのコンテナイメージ定義
+├── .dockerignore
 └── .env.example
 ```
 
@@ -52,13 +54,49 @@ npm start               # http://localhost:3000
 - `/thanks.html` — 送信完了メッセージを表示するサンクスページ。
 - `/list.html` — 保存済み問い合わせの簡易一覧画面。**認証はありません**。社内・開発用途を想定しており、個人情報を含むため公開URLとして外部に共有しないでください。将来的にスパム対策(reCAPTCHA等)や一覧画面への認証追加を検討しています（`TODO.md` 参照）。
 
-## Azureへのデプロイ（想定構成）
+## Azureへのデプロイ（採用構成）
 
 | リソース | 役割 |
 |---|---|
-| **Azure App Service** (Node.js ランタイム) | `server/index.js` を起動し、`public/` の静的配信とAPIの両方を提供 |
+| **Azure Container Apps** | `Dockerfile` からビルドしたコンテナイメージを実行。`public/` の静的配信とAPIの両方を提供 |
+| **Azure Container Registry (ACR)** | コンテナイメージの保管先。Container Appsはマネージド ID (システム割り当て) で認証してPull |
 | **Azure Database for PostgreSQL Flexible Server** | データ保存先 |
 
-App Serviceは環境変数 `PORT` を自動的に注入するため、このアプリはコード変更なしでそのまま動作します。デプロイ後は App Service の「構成」で `DATABASE_URL` を Azure Database for PostgreSQL の接続文字列（`sslmode=require`）に設定してください。
+Container Appsはコンテナのポート `3000`（`Dockerfile` の `EXPOSE`/`ENV PORT` に合わせて設定）にingressを向けています。`DATABASE_URL` はContainer Appの secret として保存し、環境変数から参照しています。
 
-CI/CD（GitHub Actionsなど）を組む場合は、別途ワークフローの追加が必要です。
+### なぜApp ServiceではなくContainer Appsなのか
+
+当初はAzure App Service（Node.jsランタイム、ソースコード直接デプロイ）を採用する予定でした。しかし実際にリソース作成を試みたところ、対象サブスクリプション（新規のPay-As-You-Go）で**App Service Planに必要なコンピューティング(VM)クォータが0**に制限されており、リージョンを変えても（Japan East / East US）、別サブスクリプションに切り替えても作成できませんでした。
+
+Azureポータルからのクォータ増設申請（Help + support 経由のサポートリクエスト）で解消は可能ですが、手続きが煩雑なため、**同じ「Azure完結」構成を保ったまま、別のクォータ枠を使うAzure Container Apps（Consumption/サーバーレスプラン）に切り替えました**。Container Appsはこのクォータ制限の影響を受けず、ポータル操作なしでCLIから即座に作成できました。
+
+この変更に伴うコード側の変更は最小限で、`Dockerfile` を1つ追加しただけです（`server/`・`public/` のコードは無変更）。
+
+### デプロイ手順
+
+```bash
+# 1. Azure Container Registry でイメージをビルド・プッシュ (ローカルDocker不要)
+az acr build --registry <ACR名> --resource-group <リソースグループ> --image contact-form-sample:latest .
+
+# 2. Container Appを作成 (初回のみ)
+az containerapp create \
+  --name contact-form-sample \
+  --resource-group <リソースグループ> \
+  --environment <Container Apps環境名> \
+  --image <ACR名>.azurecr.io/contact-form-sample:latest \
+  --registry-server <ACR名>.azurecr.io \
+  --registry-identity system \
+  --target-port 3000 \
+  --ingress external \
+  --min-replicas 0 --max-replicas 1 \
+  --secrets "database-url=<Postgres接続文字列>" \
+  --env-vars "DATABASE_URL=secretref:database-url"
+
+# 2'. 更新時はイメージを再ビルド後、以下でリビジョンを更新
+az containerapp update \
+  --name contact-form-sample \
+  --resource-group <リソースグループ> \
+  --image <ACR名>.azurecr.io/contact-form-sample:latest
+```
+
+CI/CD（GitHub Actionsなど）を組む場合は、上記のビルド・プッシュ・更新を自動化するワークフローの追加が必要です（`TODO.md` Phase 4）。

@@ -1,7 +1,9 @@
 # TODO
 
-`contact-form-sample` 開発のタスクリスト。Azure完結構成（App Service + Azure Database for PostgreSQL）を前提とする。
+`contact-form-sample` 開発のタスクリスト。Azure完結構成（Azure Container Apps + Azure Database for PostgreSQL）を前提とする。
 チェック済みは完了済みタスク。以後の作業依頼はこのリストの項目単位で行う。
+
+※ 当初はApp Serviceを想定していたが、Phase 1でクォータ制限に阻まれ Container Apps に変更した。詳細は下記Phase 1および `README.md` を参照。
 
 ## Phase 0: プロジェクト基盤 (完了)
 
@@ -40,20 +42,23 @@
 
 DDL適用・INSERT/SELECTの実データ確認は Phase 2 で行う。
 
-## Phase 1: Azureリソース準備 (一部ブロック中)
+## Phase 1: Azureリソース準備 (完了)
 
 - [x] Azure Database for PostgreSQL Flexible Server を作成
 - [x] ファイアウォール/ネットワーク設定 (Azureサービス許可 + 開発機のIP許可)
-- [ ] Azure App Service を作成 (Node.js ランタイム) — **クォータ制限でブロック中** (下記参照)
-- [ ] App Service の環境変数設定 (`DATABASE_URL` 等)
+- [x] ~~Azure App Service を作成~~ → **Azure Container Apps に変更**して作成 (下記参照)
+- [x] Container Appの環境変数設定 (`DATABASE_URL` をsecretとして設定)
 
-### ブロッカー: App Serviceのコンピューティングクォータ不足
+### 方針転換: App Service → Azure Container Apps
 
-サブスクリプション `Pay-As-You-Go` で、japaneast・eastus双方において Linux App Service Plan (B1/F1共に) 作成時に
-`Operation cannot be completed without additional quota` エラー。サブスクリプション全体でVMクォータが0の状態。
+サブスクリプション `Pay-As-You-Go` で、japaneast・eastus双方、かつ別サブスクリプション(`Azure サブスクリプション 1`)でも
+Linux App Service Plan (B1/F1共に) 作成時に `Operation cannot be completed without additional quota` エラー。
+アカウント全体でApp Service向けVMクォータが0の状態で、ポータルでのクォータ増設申請が必要だった
+（`Quotas`ブレードにApp Serviceが出てこず、サポートリクエスト経由が必要で手間がかかる）。
 
-対応: Azureポータルの「Quotas」ブレードからApp Service (japaneast, Linux) のクォータ増設を申請中。
-承認後、`plan-contact-form-sample` (Linux, B1) と Web App の作成を再開する。
+Azureポータル操作なしで進められる代替として **Azure Container Apps (Consumption/サーバーレスプラン)** に変更。
+このクォータ制限を受けず、CLIから即座に作成できた。コード側の変更は `Dockerfile` の追加のみ。
+経緯の詳細は `README.md` の「なぜApp ServiceではなくContainer Appsなのか」を参照。
 
 ### 作成済みリソース (参照用)
 
@@ -65,6 +70,9 @@ DDL適用・INSERT/SELECTの実データ確認は Phase 2 で行う。
 | DB名 | `contact_form_sample` | |
 | DB管理者ユーザー | `pgadmin` | パスワードは `.azure-pg-admin-password.txt` (gitignore対象・リポジトリには含まれない) |
 | ファイアウォール | `AllowAllAzureServicesAndResourcesWithinAzureIps_*`, `AllowDevMachine` (開発機IP) | |
+| Container Apps環境 | `env-contact-form-sample` | Consumptionワークロードプロファイル |
+| Container Registry | `acrcontactformsamplengkft` | 管理者ユーザー無効、Container Appsはシステム割り当てマネージドIDでPull |
+| Container App | `contact-form-sample` | https://contact-form-sample.proudwave-93429adb.japaneast.azurecontainerapps.io/ |
 
 ## Phase 2: DB接続・マイグレーション確認
 
@@ -75,16 +83,22 @@ DDL適用・INSERT/SELECTの実データ確認は Phase 2 で行う。
 - [ ] `list.html` が実データを正しく一覧表示できることを確認
 - [ ] フォーム送信のE2E動作確認 (ローカル → Azure DB → サンクスページ遷移)
 
-## Phase 3: Azureへのデプロイ
+## Phase 3: Azureへのデプロイ (初回分は完了)
 
-- [ ] App ServiceへExpressアプリをデプロイ
-- [ ] デプロイ後の疎通確認 (`/api/health`, フォーム送信)
-- [ ] HTTPS/カスタムドメイン確認 (必要な場合)
+Container Appsは作成時にイメージを指定する方式のため、Phase 1のリソース作成と同時に初回デプロイも完了している。
+
+- [x] Container Appsへ`Dockerfile`のイメージをビルド・デプロイ (`az acr build` → `az containerapp create`)
+- [x] デプロイ後の疎通確認 (`/`, `/api/health` が200を返すことを確認)
+- [ ] フォーム送信のE2E疎通確認 — `contacts`テーブル未作成のため`POST/GET /api/contact`は500 (Phase 2で対応)
+- [x] HTTPS確認 — `*.azurecontainerapps.io` は既定でHTTPS (追加設定不要)
+- [ ] カスタムドメイン確認 (必要であれば別途)
+
+以後のイメージ更新は `az acr build` → `az containerapp update --image ...` で行う (`README.md` 参照)。
 
 ## Phase 4: CI/CD
 
-- [ ] GitHub Actionsワークフロー作成 (main pushで自動デプロイ)
-- [ ] デプロイ用シークレット設定 (Azure発行プロファイル等)
+- [ ] GitHub Actionsワークフロー作成 (main pushで `az acr build` → `az containerapp update` を自動実行)
+- [ ] デプロイ用シークレット設定 (Azureサービスプリンシパル等をGitHub Secretsに登録)
 
 ## Phase 5: 品質・セキュリティ強化
 
