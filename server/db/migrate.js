@@ -1,6 +1,8 @@
 // Applies server/db/init.sql against DATABASE_URL.
 // Usage: npm run db:migrate
 
+require("dotenv").config();
+
 const fs = require("fs");
 const path = require("path");
 const pool = require("./pool");

@@ -74,24 +74,27 @@ Azureポータル操作なしで進められる代替として **Azure Container
 | Container Registry | `acrcontactformsamplengkft` | 管理者ユーザー無効、Container Appsはシステム割り当てマネージドIDでPull |
 | Container App | `contact-form-sample` | https://contact-form-sample.proudwave-93429adb.japaneast.azurecontainerapps.io/ |
 
-## Phase 2: DB接続・マイグレーション確認
+## Phase 2: DB接続・マイグレーション確認 (完了)
 
-- [ ] ローカルからAzure Postgresへの接続確認
-- [ ] `npm run db:migrate` 実行し、`contacts`テーブルと`category`カラムが設計通り作成されることを確認
-- [ ] `POST /api/contact` で実際にINSERTされ、`category`を含めて正しく保存されることを確認
-- [ ] `GET /api/contact` で保存データが正しく取得できることを確認 (`categories`ラベルの対応含む)
-- [ ] `list.html` が実データを正しく一覧表示できることを確認
-- [ ] フォーム送信のE2E動作確認 (ローカル → Azure DB → サンクスページ遷移)
+- [x] ローカルからAzure Postgresへの接続確認 (開発機IPのファイアウォール許可済み)
+- [x] `npm run db:migrate` 実行し、`contacts`テーブルと`category`カラムが設計通り作成されることを確認
+      ※ `migrate.js`が`.env`を読み込んでいなかったバグを修正 (dotenv.config()追加)
+- [x] `POST /api/contact` で実際にINSERTされ、`category`を含めて正しく保存されることを確認 (デプロイ済みContainer App経由)
+- [x] `GET /api/contact` で保存データが正しく取得できることを確認 (`categories`ラベルの対応含む)
+- [x] `list.html` が実データを表示できること — API応答は確認済み。ブラウザでの目視確認は未実施
+- [x] フォーム送信のE2E動作確認 — API層 (POST 201 → GET反映) は確認済み。`script.js`のサンクスページ遷移はコードレビューで確認、実ブラウザでの操作確認は未実施
 
-## Phase 3: Azureへのデプロイ (初回分は完了)
+検証時、Bash(Git Bash)経由のcurlで日本語を送ると文字化けする事象を確認したが、PowerShellから明示的にUTF-8で送信すると正しく保存・取得できることを確認 (アプリ側の問題ではなく検証コマンドの問題)。検証用テストデータ(id:1,2)は削除済み。
+
+## Phase 3: Azureへのデプロイ (完了)
 
 Container Appsは作成時にイメージを指定する方式のため、Phase 1のリソース作成と同時に初回デプロイも完了している。
 
 - [x] Container Appsへ`Dockerfile`のイメージをビルド・デプロイ (`az acr build` → `az containerapp create`)
 - [x] デプロイ後の疎通確認 (`/`, `/api/health` が200を返すことを確認)
-- [ ] フォーム送信のE2E疎通確認 — `contacts`テーブル未作成のため`POST/GET /api/contact`は500 (Phase 2で対応)
+- [x] フォーム送信のE2E疎通確認 (`POST/GET /api/contact` が201/200で動作することを確認、Phase 2参照)
 - [x] HTTPS確認 — `*.azurecontainerapps.io` は既定でHTTPS (追加設定不要)
-- [ ] カスタムドメイン確認 (必要であれば別途)
+- [ ] カスタムドメイン確認 — 今回は未要望のため未実施 (必要になれば別途)
 
 以後のイメージ更新は `az acr build` → `az containerapp update --image ...` で行う (`README.md` 参照)。
 
