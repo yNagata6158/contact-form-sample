@@ -122,10 +122,11 @@ appId: `cc7543de-9eab-408a-b424-660c844901f9`) までは作成できたが、続
 
 ## Phase 5: 品質・セキュリティ強化
 
-- [x] レート制限・スパム対策 — **[Issue #3](https://github.com/yNagata6158/contact-form-sample/issues/3)** で対応。
+- [x] レート制限・スパム対策 — **[Issue #3](https://github.com/yNagata6158/contact-form-sample/issues/3)** で対応 (**完了**)。
       honeypotフィールド (`hp_website`) + レート制限 (同一IP・10分あたり5回、`express-rate-limit`) を実装。
-      `issue-3-spam-protection`ブランチでPR作成 (Google reCAPTCHA等の外部サービス連携は見送り、
-      必要になれば別Issueで再検討)。
+      [PR #5](https://github.com/yNagata6158/contact-form-sample/pull/5) をマージ後、本番 (Container Apps)
+      へ再デプロイし、honeypot発火時の偽装成功・レート制限超過時の429を本番環境で確認済み。
+      (Google reCAPTCHA等の外部サービス連携は見送り、必要になれば別Issueで再検討)
 - [x] `qs`/Expressの脆弱性再確認 — 再度`npm audit`実施、状況変わらずupstream未パッチ (moderate、JSON APIのみ使用のため実害は限定的と判断し様子見)
 - [x] エラーハンドリング/ロギングの改善
       - リクエストログミドルウェア追加 (method/path/status/所要時間)
