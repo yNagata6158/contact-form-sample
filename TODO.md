@@ -98,7 +98,7 @@ Container Appsは作成時にイメージを指定する方式のため、Phase 
 
 以後のイメージ更新は `az acr build` → `az containerapp update --image ...` で行う (`README.md` 参照)。
 
-## Phase 4: CI/CD (**保留 — 要GitHub Issue起票**)
+## Phase 4: CI/CD (**保留 — Issue #1**)
 
 - [ ] GitHub Actionsワークフロー作成 (main pushで `az acr build` → `az containerapp update` を自動実行)
 - [ ] デプロイ用シークレット設定 (Azureサービスプリンシパル等をGitHub Secretsに登録)
@@ -118,18 +118,20 @@ appId: `cc7543de-9eab-408a-b424-660c844901f9`) までは作成できたが、続
 4. `gh secret set` で `AZURE_CLIENT_ID` / `AZURE_TENANT_ID` / `AZURE_SUBSCRIPTION_ID` をリポジトリに登録
 5. `.github/workflows/deploy.yml` を作成 (build→push→`containerapp update`)
 
-**→ 開発が一通り終わったら、この内容でGitHubにIssueを起票すること。**
+→ **[Issue #1](https://github.com/yNagata6158/contact-form-sample/issues/1)** として起票済み。
 
 ## Phase 5: 品質・セキュリティ強化
 
-- [ ] レート制限・スパム対策 (reCAPTCHA等) — Phase 0.5で決定済みの通り**今回は引き続き保留**
+- [ ] レート制限・スパム対策 (reCAPTCHA等) — Phase 0.5で決定済みの通り**今回は引き続き保留**。
+      → **[Issue #3](https://github.com/yNagata6158/contact-form-sample/issues/3)** として起票済み。
 - [x] `qs`/Expressの脆弱性再確認 — 再度`npm audit`実施、状況変わらずupstream未パッチ (moderate、JSON APIのみ使用のため実害は限定的と判断し様子見)
 - [x] エラーハンドリング/ロギングの改善
       - リクエストログミドルウェア追加 (method/path/status/所要時間)
       - エラーハンドラーにリクエストコンテキストを追加してログ出力
       - `unhandledRejection`/`uncaughtException`をログ出力の上でプロセス終了するよう追加 (コンテナ再起動前提)
 - [x] 自動テスト追加 — `node --test` (Node組み込み、追加依存なし) で`validate()`関数の単体テスト8件を追加、全件成功
-      ※ DBに依存する結合テスト (POST/GET /api/contactの実挙動) は未実施。ローカルDBのモックやテスト用DB環境が別途必要
+      ※ DBに依存する結合テスト (POST/GET /api/contactの実挙動) は未実施。
+      → **[Issue #2](https://github.com/yNagata6158/contact-form-sample/issues/2)** として起票済み。
 
 ## Phase 6: 運用 (現状確認・ドキュメント化まで完了)
 
@@ -142,3 +144,4 @@ appId: `cc7543de-9eab-408a-b424-660c844901f9`) までは作成できたが、続
       Azure Portalの「ログストリーム」「ログ」で確認可能
 - [ ] アラート設定 (例: エラー率上昇時のメール/Teams通知) — 今回は未設定。個人情報(メールアドレス)を
       新たにAzure Monitorの通知先として登録することになるため、必要になれば別途相談の上で設定する
+      → **[Issue #4](https://github.com/yNagata6158/contact-form-sample/issues/4)** として起票済み。
