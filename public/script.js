@@ -43,6 +43,8 @@ form.addEventListener("submit", async (event) => {
     email: formData.get("email")?.toString() ?? "",
     category: formData.get("category")?.toString() ?? "",
     message: formData.get("message")?.toString() ?? "",
+    // ボット対策のhoneypotフィールド。人間には見えないため通常は空のまま送信される。
+    hp_website: formData.get("hp_website")?.toString() ?? "",
   };
 
   if (!validate(data)) {

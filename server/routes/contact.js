@@ -1,9 +1,30 @@
 const express = require("express");
+const rateLimit = require("express-rate-limit");
 const pool = require("../db/pool");
 
 const router = express.Router();
 
 const EMAIL_RE = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
+
+// ボット対策: 実ユーザーには見えないフィールド (public/index.html, style.css参照)。
+// ここに値が入っていたら自動入力botとみなす。
+const HONEYPOT_FIELD = "hp_website";
+
+function isHoneypotTriggered(body) {
+  const value = body?.[HONEYPOT_FIELD];
+  return typeof value === "string" && value.trim().length > 0;
+}
+
+// ボット対策: 同一IPからの連続送信を制限する。
+// Container Apps はリバースプロキシ配下で動くため、実クライアントIPを
+// 正しく見るには index.js 側で app.set("trust proxy", ...) が必要。
+const contactRateLimiter = rateLimit({
+  windowMs: 10 * 60 * 1000, // 10分
+  limit: 5,
+  standardHeaders: true,
+  legacyHeaders: false,
+  message: { error: "送信回数が上限に達しました。しばらく時間をおいて再度お試しください。" },
+});
 
 const CATEGORIES = {
   general: "一般的なお問い合わせ",
@@ -38,9 +59,17 @@ function validate(body) {
 }
 
 // POST /api/contact - store a new submission
-router.post("/", async (req, res, next) => {
+router.post("/", contactRateLimiter, async (req, res, next) => {
   try {
-    const { errors, values } = validate(req.body ?? {});
+    const body = req.body ?? {};
+
+    if (isHoneypotTriggered(body)) {
+      // bot向け: 実際には保存せず、成功したように見せて静かに落とす。
+      console.warn(`Honeypot triggered from ${req.ip}`);
+      return res.status(201).json({ contact: null });
+    }
+
+    const { errors, values } = validate(body);
 
     if (Object.keys(errors).length > 0) {
       return res.status(400).json({ error: "入力内容に誤りがあります。", fields: errors });
@@ -77,3 +106,5 @@ router.get("/", async (_req, res, next) => {
 module.exports = router;
 module.exports.validate = validate;
 module.exports.CATEGORIES = CATEGORIES;
+module.exports.isHoneypotTriggered = isHoneypotTriggered;
+module.exports.HONEYPOT_FIELD = HONEYPOT_FIELD;

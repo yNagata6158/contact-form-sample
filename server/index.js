@@ -7,6 +7,11 @@ const contactRouter = require("./routes/contact");
 const app = express();
 const PORT = process.env.PORT || 3000;
 
+// Azure Container Apps のingress (リバースプロキシ) 配下で動作するため、
+// X-Forwarded-For を信頼して実クライアントIPを req.ip に反映する。
+// (レート制限や将来のIPベースの制御が正しく機能するために必要)
+app.set("trust proxy", true);
+
 app.use(express.json());
 
 // リクエストログ (メソッド・パス・ステータス・所要時間)

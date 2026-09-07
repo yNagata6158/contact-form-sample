@@ -12,6 +12,18 @@
     <p class="lead">ご質問・ご相談はこちらのフォームからお送りください。</p>
 
     <form id="contact-form" novalidate>
+      <!-- ボット対策のhoneypotフィールド。実ユーザーには見えず、入力もされない想定。 -->
+      <div class="hp-field" aria-hidden="true">
+        <label for="hp_website">ウェブサイト</label>
+        <input
+          type="text"
+          id="hp_website"
+          name="hp_website"
+          tabindex="-1"
+          autocomplete="off"
+        />
+      </div>
+
       <div class="field">
         <label for="name">お名前 <span class="required">必須</span></label>
         <input type="text" id="name" name="name" required maxlength="100" autocomplete="name" />
